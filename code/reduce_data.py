@@ -206,25 +206,29 @@ dtype={'B_38': np.dtype(str),
 }
 
 
+input = input("type train or test : ")
 
+if input == "train":
+      data=pd.read_csv('../data/train_data.csv',dtype=dtype)
+if input == "test":
+      data=pd.read_csv('../data/test_data.csv',dtype=dtype)
 
-train=pd.read_csv('../data/train_data.csv',dtype=dtype)
-train=train.drop(['customer_ID'],axis=1)
+data=data.drop(['customer_ID'],axis=1)
 
-train=train[train.columns[train.isnull().mean() < 0.5]]
-train.S_2=pd.to_datetime(train.S_2, infer_datetime_format=True)
+data=data[data.columns[data.isnull().mean() < 0.5]]
+data.S_2=pd.to_datetime(data.S_2, infer_datetime_format=True)
 
 dt_fe = FeatureEngineering_DateTime()
-dt_fe.fit(train, datetime_variables=['S_2'])
-train = dt_fe.transform(train)
+dt_fe.fit(data, datetime_variables=['S_2'])
+data = dt_fe.transform(data)
 
-nunique_train=train.nunique().reset_index()
-remove_col=nunique_train[(nunique_train[0]==len(train)) | (nunique_train[0]==0) | (nunique_train[0]==1) ]['index'].tolist()
-train=train.drop(remove_col,axis=1)
-total_col=train.columns.tolist()
+nunique_data=data.nunique().reset_index()
+remove_col=nunique_data[(nunique_data[0]==len(data)) | (nunique_data[0]==0) | (nunique_data[0]==1) ]['index'].tolist()
+data=data.drop(remove_col,axis=1)
+total_col=data.columns.tolist()
 
-train=train.drop(['S_2'],axis=1)
-train[['S_2:year',
+data=data.drop(['S_2'],axis=1)
+data[['S_2:year',
  'S_2:quarter',
  'S_2:month',
  'S_2:day',
@@ -237,7 +241,7 @@ train[['S_2:year',
  'S_2:is_quarter_start',
  'S_2:is_year_end',
  'S_2:is_year_start',
- 'S_2:is_weekend']]=train[['S_2:year',
+ 'S_2:is_weekend']]=data[['S_2:year',
  'S_2:quarter',
  'S_2:month',
  'S_2:day',
@@ -252,14 +256,18 @@ train[['S_2:year',
  'S_2:is_year_start',
  'S_2:is_weekend']].astype('int8')
 
-train_y=pd.read_csv('../data/train_labels.csv',dtype={'target':np.dtype('int8')})
-train_y=train_y[['target']]
+if input == "train":
+      train_y=pd.read_csv('../data/train_labels.csv',dtype={'target':np.dtype('int8')})
+      train_y=train_y[['target']]
 
-train['target']=train_y['target']
-del train_y
-train.target=train.target.astype('float16')
+      data['target']=train_y['target']
+      del train_y
+      data.target=data.target.astype('float16')
 
-train = train.rename(columns = lambda x:re.sub('[^A-Za-z0-9_]+', '', x))
+data = data.rename(columns = lambda x:re.sub('[^A-Za-z0-9_]+', '', x))
 
-pd.to_pickle(train, "../data/train.pkl")
-print(train.info(verbose=True))
+if input == "train":
+      pd.to_pickle(data, "../data/train.pkl")
+if input == "test":
+      pd.to_pickle(data, "../data/test.pkl")
+print(data.info(verbose=True))
